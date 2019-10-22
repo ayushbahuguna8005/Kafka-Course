@@ -21,7 +21,6 @@ public class ConsumerDemoWithThread {
     }
 
     private ConsumerDemoWithThread(){
-
     }
 
     private void run(){
@@ -31,11 +30,38 @@ public class ConsumerDemoWithThread {
         String groupId = "my-sixth-application";
         String topic = "first_topic";
 
+        //latch for dealing with multiple threads
         CountDownLatch latch = new CountDownLatch(1);
 
         logger.info("Creating the consumer");
-
+        // create consumer runnable
         Runnable myConsumerThread = new ConsumerThread(bootstrapServers, groupId, topic, latch);
+
+        // start the thread
+        Thread myThread = new Thread(myConsumerThread);
+        myThread.start();
+
+        //add a shutdown hook
+        Runtime.getRuntime().addShutdownHook(new Thread( () -> {
+            logger.info("Caught shutdown hook");
+            ((ConsumerThread) myConsumerThread).shutdown();
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            logger.info("Application has exited");
+        }));
+
+
+        // application doesn't stop right away so we make it wait until application is over
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            logger.info("Application got interrupted", e);
+        } finally {
+            logger.info("Application is closing");
+        }
     }
 
     public class ConsumerThread implements Runnable{
