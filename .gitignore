@@ -1,2 +1,4 @@
 /.idea
 /target
+/kafka-producer-twitter/src/main/java/TwitterConfig.java
+/kafka-consumer-es/src/main/java/ElasticConfig.java
